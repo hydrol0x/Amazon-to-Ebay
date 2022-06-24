@@ -35,11 +35,16 @@ def handle_alt_table(id):
     return prod_info_dict
 
 # function handles list type listing (<ul>)
-# def handle_list(id):
+def handle_list(id):
+    prod_info = (page.find(id=id).find_all('li'))
+    prod_info_dict = {}
+    for info in prod_info:
+        prod_info_dict[(info.span.contents[1].text.replace(':','').replace('\n', '').replace('\u200f', '').replace('\u200e','').strip())] = (info.span.contents[3].text.strip())
+    return prod_info_dict
 
 
 # List of possible ID values containing product info
-ids = ['prodDetails', 'tech', 'detailBulletsWrapper_feature_div']
+ids = ['prodDetails', 'tech', 'detailBullets_feature_div']
 
 # TODO try except
 # scrape product information into a dictionary
@@ -49,20 +54,25 @@ def get_info(ids=ids):
         match id:
             case 'prodDetails':
                 try:
-                    handle_table(id)
+                    data = handle_table(id)
                 except AttributeError:
                     pass
                 else:
-                    return handle_table(id)
+                    return data
             case 'tech':
                 try:
-                    handle_alt_table(id)
+                    data = handle_alt_table(id)
                 except AttributeError:
                     pass
                 else:
-                    return handle_alt_table(id)
-            # case 'detailBulletsWrapper_feature_div':
-            #     handlelistli()
+                    return data
+            case 'detailBullets_feature_div':
+                try:
+                    data = handle_list(id)
+                except AttributeError:
+                    pass
+                else:
+                    return data
             case _:
                 return "Invalid product"
        
