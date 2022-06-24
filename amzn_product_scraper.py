@@ -82,7 +82,7 @@ def get_product_overview(id='productOverview_feature_div'):
     overview_dict = {}
     for info in overview:
         (overview_dict[info.contents[1].text.strip()]) = (info.contents[3].text.strip())
-    return overview_dict if len(overview_dict)>0 else print('No product overview')
+    return overview_dict if len(overview_dict)>0 else {}
 
 
 # scraped from product overview sec, if available. Adds extra information    
