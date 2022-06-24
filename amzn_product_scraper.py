@@ -1,4 +1,5 @@
 # libraries 
+from cgi import print_exception
 import requests
 import json
 from bs4 import BeautifulSoup 
@@ -37,15 +38,13 @@ def handle_alt_table(id):
 
 # * function handles list type listing (<ul>)
 def handle_list(id):
-    # there are two divs with the same id, in order to select the right one find_all then select the second in array.
+    # the DIV wrapping the list can have slightly different names so I find any div matching the ID and then take the first unordered list
     prod_info = page.find(id=id).find_all('ul')[0].find_all('li')
     prod_info_dict = {}
     for info in prod_info:
         prod_info_dict[(info.span.contents[1].text.replace(':','').replace('\n', '').replace('\u200f', '').replace('\u200e','').strip())] = (info.span.contents[3].text.strip())
     return prod_info_dict
     
-
-
 # List of possible ID values containing product info
 ids = ['prodDetails', 'tech', 'detailBullets_feature_div']
 
@@ -78,8 +77,33 @@ def get_info(ids=ids):
             case _:
                 return "Invalid product"
 
+def get_product_overview(id='productOverview_feature_div'):
+    overview = page.find(id=id).find_all('tr')
+    overview_dict = {}
+    for info in overview:
+        (overview_dict[info.contents[1].text.strip()]) = (info.contents[3].text.strip())
+    return overview_dict if len(overview_dict)>0 else print('No product overview')
+
+
+# scraped from product overview sec, if available. Adds extra information    
+product_overview = get_product_overview()
+
+# get item description
+description = page.find(id='feature-bullets').ul.text.strip()
+
+# item title
+title = page.find(id='productTitle').text.strip()
+
+# item price
+price = page.find(id='corePrice_feature_div').span.span.text
+
 # product information       
 prod_info_dict = get_info(ids)
+prod_info_dict['Description'] = description
+prod_info_dict['Price'] = price 
+prod_info_dict['Title'] = title
+# adds product overview data to dictionary and overwrites any values occuring twice
+prod_info_dict.update(product_overview)
 
 # Serializing JSON
 json_object = json.dumps(prod_info_dict, indent = 4)
