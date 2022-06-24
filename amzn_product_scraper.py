@@ -1,3 +1,4 @@
+# libraries 
 import requests
 import json
 from bs4 import BeautifulSoup 
@@ -12,7 +13,8 @@ headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Geck
 page = requests.get(url, headers=headers) 
 page = BeautifulSoup(page.content, "html.parser")
 
-### FUNCTIONS HANDLING DIFFERENT IDS ###
+
+### * * FUNCTIONS HANDLING DIFFERENT IDS * * ###
 
 # function handles table type of listing; th is the heading for the product info and td is the value.  
 def handle_table(id):
@@ -25,7 +27,12 @@ def handle_table(id):
 # function handles the alternate table-listing where only td tags are used and no th tags are used 
 # TODO differentiate between first td tag and second for key/value, use <em> tags on heading
 def handle_alt_table(id):
-    pass
+    prod_info = (page.find(id=id).find_all('tr'))
+    prod_info_dict = {}
+    # because both tags are the same (td), use .contents to have a list of the child tags. The tags are seperated by \n so use [1] and [3] instead of [0], [1].
+    for info in prod_info:
+        (prod_info_dict[info.contents[1].text.strip()]) = (info.contents[3].text.strip())
+    return prod_info_dict
 
 # function handles list type listing (<ul>)
 # def handle_list(id):
@@ -37,15 +44,29 @@ ids = ['prodDetails', 'tech', 'detailBulletsWrapper_feature_div']
 # TODO try except
 # scrape product information into a dictionary
 # prod details : tableli, tech: altli, detailBulletsWrapper_feature_div : listli <-- which function to use
-def get_info(ids, page):
+def get_info(ids=ids):
     for id in ids:
         match id:
             case 'prodDetails':
-                return handle_table(id)
+                try:
+                    handle_table(id)
+                except AttributeError:
+                    pass
+                else:
+                    return handle_table(id)
             case 'tech':
-                return handle_alt_table(id)
-        # case 'detailBulletsWrapper_feature_div'
+                try:
+                    handle_alt_table(id)
+                except AttributeError:
+                    pass
+                else:
+                    return handle_alt_table(id)
+            # case 'detailBulletsWrapper_feature_div':
+            #     handlelistli()
+            case _:
+                return "Invalid product"
+       
 
 with open('product.txt', 'w') as json_file:
-  json.dump(get_info(ids, page), json_file)
-print(get_info(ids, page))
+  json.dump(get_info(ids), json_file)
+print(get_info(ids))
