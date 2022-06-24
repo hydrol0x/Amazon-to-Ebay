@@ -37,7 +37,8 @@ def handle_alt_table(id):
 
 # * function handles list type listing (<ul>)
 def handle_list(id):
-    prod_info = (page.find_all(id=id)[1].find_all('li'))
+    # there are two divs with the same id, in order to select the right one find_all then select the second in array.
+    prod_info = page.find(id=id).find_all('ul')[0].find_all('li')
     prod_info_dict = {}
     for info in prod_info:
         prod_info_dict[(info.span.contents[1].text.replace(':','').replace('\n', '').replace('\u200f', '').replace('\u200e','').strip())] = (info.span.contents[3].text.strip())
