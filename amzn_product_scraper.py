@@ -17,6 +17,7 @@ print("Parsing page data")
 page = BeautifulSoup(page.content, "html.parser")
 print("Page data parsed")
 
+
 ### * * FUNCTIONS HANDLING DIFFERENT IDS * * ###
 
 # *function handles table type of listing; th is the heading for the product info and td is the value.  
@@ -24,7 +25,7 @@ def handle_table(id):
     prod_info = (page.find(id=id).find_all('tr'))
     prod_info_dict = {}
     for info in prod_info:
-        prod_info_dict[(info.find('th').text.strip())] = (info.find('td').text.strip().replace('\u200e', '').replace('\n',''))
+        prod_info_dict[(info.find('th').text.strip())] = (info.find('td').text.strip().encode("ascii", "ignore").decode())
     return prod_info_dict
 
 # *function handles the alternate table-listing where only td tags are used and no th tags are used 
@@ -42,7 +43,7 @@ def handle_list(id):
     prod_info = page.find(id=id).find_all('ul')[0].find_all('li')
     prod_info_dict = {}
     for info in prod_info:
-        prod_info_dict[(info.span.contents[1].text.replace(':','').replace('\n', '').replace('\u200f', '').replace('\u200e','').strip())] = (info.span.contents[3].text.strip())
+        prod_info_dict[(info.span.contents[1].text.encode("ascii", "ignore").decode().strip())] = (info.span.contents[3].text.strip())
     return prod_info_dict
     
 # List of possible ID values containing product info
@@ -77,11 +78,14 @@ def get_info(ids=ids):
             case _:
                 return "Invalid product"
 
+# gets product overview if available
 def get_product_overview(id='productOverview_feature_div'):
     overview = page.find(id=id).find_all('tr')
     overview_dict = {}
     for info in overview:
+        # same implementation as the alt_table function
         (overview_dict[info.contents[1].text.strip()]) = (info.contents[3].text.strip())
+    # if overview dict is non 0 length return dictionary, otherwise return an empty dictionary 
     return overview_dict if len(overview_dict)>0 else {}
 
 
@@ -89,21 +93,27 @@ def get_product_overview(id='productOverview_feature_div'):
 product_overview = get_product_overview()
 
 # get item description
-description = page.find(id='feature-bullets').ul.text.strip()
+description = page.find(id='feature-bullets').ul.text.strip().encode("ascii", "ignore").decode()
 
-# item title
-title = page.find(id='productTitle').text.strip()
+# get item title
+title = page.find(id='productTitle').text.strip().encode("ascii", "ignore").decode()
 
-# item price
+# get item price
 price = page.find(id='corePrice_feature_div').span.span.text
 
 # product information       
 prod_info_dict = get_info(ids)
+# add product description
 prod_info_dict['Description'] = description
+# add product price
 prod_info_dict['Price'] = price 
+# add product title
 prod_info_dict['Title'] = title
 # adds product overview data to dictionary and overwrites any values occuring twice
 prod_info_dict.update(product_overview)
+
+for key in prod_info_dict:
+    prod_info_dict[key] = prod_info_dict[key].encode('ascii', 'ignore').decode()
 
 # Serializing JSON
 json_object = json.dumps(prod_info_dict, indent = 4)
